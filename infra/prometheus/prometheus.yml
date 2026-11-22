@@ -12,3 +12,11 @@ scrape_configs:
 
   # Service targets (gateway, orders, payments, inventory,
   # card-provider) are added when the services exist.
+
+  - job_name: payments
+    static_configs:
+      - targets: ["payments:8000"]
+
+  - job_name: card-provider
+    static_configs:
+      - targets: ["card-provider:8100"]
