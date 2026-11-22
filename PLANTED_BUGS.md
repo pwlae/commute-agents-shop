@@ -130,15 +130,19 @@ The consumer treats every error as "try again": it closes the client,
 waits 2 s and starts from the last committed offset, which is the same bad
 message, forever. `inventory.dlq.v1` exists but nothing writes to it. The
 orders behind it on that partition (and often the others, which share the
-client) wait.
+client) wait. `inventory_consumer_lag` is measured from the group's
+committed offsets, not from its members, so it shows the backlog even
+while the consumer keeps leaving and rejoining the group.
 
-**Trigger:** produce `not-json` to `inventory.reserve.v1`, then 30 orders.
+**Trigger:** produce `not-json` to each of the 3 partitions of
+`inventory.reserve.v1` (keys `bad-4`, `bad-0`, `bad-3` hash to partitions
+0, 1, 2), then 30 orders.
 
-**Signal:** `inventory_consumer_lag` climbs (21 in the runs);
-`InventoryConsumerLag` fires 73–76 s after the trigger (`for: 1m`). Orders
+**Signal:** `inventory_consumer_lag` climbs (33: 3 bad values + 30
+orders); `InventoryConsumerLag` fires 72–83 s after the trigger (`for: 1m`). Orders
 stay `PENDING`, so `SagaStuck` follows after 2 minutes.
 
-**Log line** (every 7 s):
+**Log line** (every 2–7 s):
 
 ```
 inventory-1 | 2026/11/22 09:37:18 ERROR consumer stopped: decode inventory.reserve.v1: invalid character 'o' in literal null (expecting 'u'); restarting in 2s

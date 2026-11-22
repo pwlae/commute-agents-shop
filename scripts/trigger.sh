@@ -153,12 +153,16 @@ case $bug in
     expect "alert CapturedForFailedOrder" firing CapturedForFailedOrder
     if [ "$wait" = 1 ]; then say "charges: $(charges "$id")"; fi
     ;;
-  4)  # one value that is not JSON, then normal orders behind it
-    echo not-json | docker compose exec -T kafka \
+  4)  # a value that is not JSON, then normal orders behind it.
+      # The keys hash to partitions 0, 1 and 2 (murmur2, 3
+      # partitions), so every order behind them waits.
+    printf 'bad-4:not-json\nbad-0:not-json\nbad-3:not-json\n' \
+      | docker compose exec -T kafka \
       /opt/kafka/bin/kafka-console-producer.sh \
       --bootstrap-server localhost:9092 --topic inventory.reserve.v1 \
+      --property parse.key=true --property key.separator=: \
       >/dev/null 2>&1
-    say "not-json produced to inventory.reserve.v1"
+    say "not-json produced to each partition of inventory.reserve.v1"
     for i in $(seq 30); do
       place tok_decline CABLE-04:1 >/dev/null
     done
