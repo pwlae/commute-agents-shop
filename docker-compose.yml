@@ -111,7 +111,23 @@ services:
   # ---------------------------------------------------------
   # Services (added by later steps)
   # ---------------------------------------------------------
-  # gateway:        TypeScript, :8080 (exposed to the host)
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    environment:
+      ORDERS_URL: http://orders:3001
+      API_KEYS: dev-key
+    ports:
+      - "8080:8080"
+    depends_on:
+      orders:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz"]
+    mem_limit: 96m
+
   # orders:         TypeScript, :3001, owns the saga
   # payments:       Python, :8000
   # card-provider:  Python (fake), :8100
