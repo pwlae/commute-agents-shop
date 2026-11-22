@@ -102,7 +102,12 @@ export class Saga {
     try {
       res = await this.d.payments.post(
         "/charges",
-        { order_id: order.id, amount_cents: amount, idempotency_key: key },
+        {
+          order_id: order.id,
+          amount_cents: amount,
+          idempotency_key: key,
+          card_token: order.cardToken,
+        },
         key,
         { traceId },
       );

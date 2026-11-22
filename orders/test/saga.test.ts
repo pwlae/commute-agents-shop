@@ -60,6 +60,7 @@ describe("saga", () => {
       order_id: t.id,
       amount_cents: 8100,
       idempotency_key: `order-${t.id}`,
+      card_token: "tok_ok",
     });
 
     const o = t.store.orders.get(t.id)!;

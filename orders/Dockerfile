@@ -1,5 +1,5 @@
 # Build context: the repository root (needs libs/http-ts).
-FROM node:22.23.5-alpine AS build
+FROM node:22.22.0-alpine AS build
 WORKDIR /app
 COPY libs/http-ts/package.json libs/http-ts/package-lock.json libs/http-ts/tsconfig.json libs/http-ts/
 COPY libs/http-ts/src libs/http-ts/src
@@ -9,7 +9,7 @@ RUN cd orders && npm ci
 COPY orders/src orders/src
 RUN cd orders && npm run build && npm prune --omit=dev
 
-FROM node:22.23.5-alpine
+FROM node:22.22.0-alpine
 ENV NODE_ENV=production KAFKAJS_NO_PARTITIONER_WARNING=1
 WORKDIR /app
 COPY --from=build /app/libs/http-ts/package.json libs/http-ts/
