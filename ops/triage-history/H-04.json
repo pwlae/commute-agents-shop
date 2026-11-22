@@ -1,0 +1,7 @@
+{
+ "id": "H-04",
+ "title": "Test message on inventory.reserved.v1 skipped by orders",
+ "signature": "time=<ts> level=error service=orders msg=\"bad message skipped\" topic=inventory.reserved.v<n> partition=<n> offset=<n>",
+ "branch": "not-a-bug",
+ "resolved": "2026-11-08"
+}

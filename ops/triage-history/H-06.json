@@ -1,0 +1,7 @@
+{
+ "id": "H-06",
+ "title": "Card provider timeouts during their maintenance window",
+ "signature": "<ts> error payments.api card provider timeout order_id=<id> trace_id=<trace>: timeout after <n> ms: http://card-provider:<n>/authorize",
+ "branch": "not-a-bug",
+ "resolved": "2026-11-15"
+}

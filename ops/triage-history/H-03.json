@@ -1,0 +1,7 @@
+{
+ "id": "H-03",
+ "title": "Inventory stock page errors during the database restart",
+ "signature": "<ts> error stock lookup for lamp-<n> failed: failed to connect to `user=inventory database=inventory`: <n>.<n>:<n> (postgres): dial error: dial tcp <n>.<n>:<n>: connect: connection refused trace=<hex>",
+ "branch": "not-a-bug",
+ "resolved": "2026-11-06"
+}
