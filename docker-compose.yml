@@ -117,6 +117,27 @@ services:
   # card-provider:  Python (fake), :8100
   # inventory:      Go, :8200
 
+  inventory:
+    build:
+      context: .
+      dockerfile: inventory/Dockerfile
+    environment:
+      PORT: "8200"
+      DATABASE_URL: postgres://inventory:inventory@postgres:5432/inventory?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      <<: *health
+      test: ["CMD", "inventory", "healthcheck"]
+    restart: unless-stopped
+    mem_limit: 64m
+
   # ---------------------------------------------------------
   # Traffic generator (compose profile "traffic", added later)
   # ---------------------------------------------------------

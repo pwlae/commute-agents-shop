@@ -1,0 +1,4 @@
+DELETE FROM reservations
+WHERE sku IN ('MAT-01', 'LAMP-02', 'CHAIR-03', 'CABLE-04', 'MUG-05');
+DELETE FROM stock
+WHERE sku IN ('MAT-01', 'LAMP-02', 'CHAIR-03', 'CABLE-04', 'MUG-05');
