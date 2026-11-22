@@ -1,0 +1,7 @@
+{
+ "id": "H-05",
+ "title": "Reconciler finds a captured payment for a cancelled order",
+ "signature": "<ts> warning payments.reconciler captured for failed order charge_id=ch_<hex> order_id=<id>",
+ "branch": "needs-human",
+ "resolved": "2026-11-12"
+}

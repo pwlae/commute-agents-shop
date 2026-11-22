@@ -1,0 +1,7 @@
+{
+ "id": "H-02",
+ "title": "Payments reconciler warns while orders is restarting",
+ "signature": "<ts> warning payments.reconciler orders unavailable, keeping last value: connect failed: http://orders:<n>/orders/<id>",
+ "branch": "not-a-bug",
+ "resolved": "2026-11-10"
+}

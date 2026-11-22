@@ -1,0 +1,52 @@
+{
+ "T-01": {
+  "branch": "needs-info",
+  "why": "no time, page or order id; nothing to look for"
+ },
+ "T-02": {
+  "branch": "fix",
+  "why": "stock drift on multi-item decline (bug 2): inventory_stock_drift 2, StockDrift"
+ },
+ "T-03": {
+  "branch": "not-a-bug",
+  "why": "declined card cancels the order and releases stock, as designed"
+ },
+ "T-04": {
+  "branch": "needs-human",
+  "why": "double charge on replay (bug 1); money path"
+ },
+ "T-05": {
+  "branch": "fix",
+  "why": "poison message stalls the inventory consumer (bug 4): consumer stopped errors, inventory_consumer_lag, SagaStuck"
+ },
+ "T-06": {
+  "branch": "needs-info",
+  "why": "no times, items or order ids; nothing stands out"
+ },
+ "T-07": {
+  "branch": "duplicate",
+  "of": "H-02",
+  "why": "same reconciler warning as H-02 while orders restarts"
+ },
+ "T-08": {
+  "branch": "needs-human",
+  "why": "captured for a failed order after a charge timeout (bug 3); money path"
+ },
+ "T-09": {
+  "branch": "duplicate",
+  "of": "H-05",
+  "why": "same captured-for-failed-order signature as H-05"
+ },
+ "T-10": {
+  "branch": "not-a-bug",
+  "why": "qty 999 is more than the 50 in stock: REJECTED as designed"
+ },
+ "T-11": {
+  "branch": "fix",
+  "why": "inventory reads and writes trace-id, the rest x-trace-id, so traces break at inventory"
+ },
+ "T-12": {
+  "branch": "fix",
+  "why": "bad inventory deploy at 10:03 lower-cases SKUs (bug 6): every order REJECTED; roll back"
+ }
+}

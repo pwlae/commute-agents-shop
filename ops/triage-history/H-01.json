@@ -1,0 +1,7 @@
+{
+ "id": "H-01",
+ "title": "Card provider answering 503 for every authorization",
+ "signature": "<ts> error payments.api card provider returned <n> order_id=<id> trace_id=<trace>",
+ "branch": "not-a-bug",
+ "resolved": "2026-11-03"
+}

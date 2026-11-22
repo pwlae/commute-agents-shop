@@ -75,6 +75,14 @@ class SignatureTest(unittest.TestCase):
         sigs = {tools.signature(a) for a, _, _ in FORMATS.values()}
         self.assertEqual(len(sigs), len(FORMATS))
 
+    def test_prefixed_hex_id(self):
+        # Payments charge ids: "ch_" and 24 hex characters.
+        a = "captured charge_id=ch_a959735335fb402cb1b5a47e x"
+        b = "captured charge_id=ch_3e8b21f04c9d47a6b05e7c12 x"
+        self.assertEqual(tools.signature(a),
+                         "captured charge_id=ch_<hex> x")
+        self.assertEqual(tools.signature(a), tools.signature(b))
+
     def test_compose_prefix_and_spaces(self):
         raw = FORMATS["orders-logfmt"][0]
         self.assertEqual(

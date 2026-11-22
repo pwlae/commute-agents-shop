@@ -118,7 +118,10 @@ _UUID = re.compile(
 _TIME = re.compile(
     r"\d{4}[-/]\d{2}[-/]\d{2}[T ]\d{2}:\d{2}:\d{2}"
     r"(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?", re.I)
-_HEX = re.compile(r"\b(?:0x[0-9a-f]+|[0-9a-f]{6,})\b", re.I)
+# No \b in front: ids like "ch_a959..." have an underscore
+# prefix, and "_" counts as a word character.
+_HEX = re.compile(
+    r"(?<![0-9a-z])(?:0x[0-9a-f]+|[0-9a-f]{6,})\b", re.I)
 _NUM = re.compile(r"\d+(?:\.\d+)?")
 _SPACE = re.compile(r"\s+")
 
