@@ -138,6 +138,35 @@ services:
     restart: unless-stopped
     mem_limit: 64m
 
+  payments:
+    build:
+      context: .
+      dockerfile: payments/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://payments:payments@postgres:5432/payments
+      CARD_PROVIDER_URL: http://card-provider:8100
+      ORDERS_URL: http://orders:3001
+      RECONCILE_EVERY_S: "15"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      card-provider:
+        condition: service_healthy
+    healthcheck:
+      <<: *health
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+      start_period: 10s
+    mem_limit: 128m
+
+  card-provider:
+    build:
+      context: .
+      dockerfile: card-provider/Dockerfile
+    healthcheck:
+      <<: *health
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8100/healthz', timeout=3)"]
+    mem_limit: 96m
+
   # ---------------------------------------------------------
   # Traffic generator (compose profile "traffic", added later)
   # ---------------------------------------------------------
