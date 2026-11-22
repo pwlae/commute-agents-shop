@@ -12,3 +12,7 @@ scrape_configs:
 
   # Service targets (gateway, orders, payments, inventory,
   # card-provider) are added when the services exist.
+
+  - job_name: gateway
+    static_configs:
+      - targets: ["gateway:8080"]
