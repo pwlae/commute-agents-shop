@@ -116,18 +116,20 @@ func (p *Postgres) move(ctx context.Context, orderID, cmd string, items []Item, 
 			res.Duplicate = !ok
 			return err
 		}
-		rows, err := tx.Query(ctx, `
+		var moved []Item
+		var it Item
+		err = tx.QueryRow(ctx, `
 			UPDATE reservations
 			SET state = $3, updated_at = now()
 			WHERE order_id = $1 AND state = 'held'
 			  AND (cardinality($2::text[]) = 0 OR sku = ANY($2))
-			RETURNING sku, qty`, orderID, skus, to)
-		if err != nil {
+			RETURNING sku, qty`, orderID, skus, to).Scan(&it.SKU, &it.Qty)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+		case err != nil:
 			return err
-		}
-		moved, err := pgx.CollectRows(rows, pgx.RowToStructByPos[Item])
-		if err != nil {
-			return err
+		default:
+			moved = append(moved, it)
 		}
 		back := 0
 		if to == "released" {

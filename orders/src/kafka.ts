@@ -53,6 +53,9 @@ export async function startConsumer(kafka: Kafka, saga: Saga, log: Logger) {
   await consumer.connect();
   await consumer.subscribe({
     topics: [TOPICS.reserved, TOPICS.rejected],
+    // A new group must not skip events written before it first
+    // committed an offset (e.g. after a crash on a fresh stack).
+    fromBeginning: true,
   });
   await consumer.run({
     eachMessage: async ({ topic, partition, message }) => {

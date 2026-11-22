@@ -1,0 +1,8 @@
+{"service": "payments", "git_sha": "cf0aeaf", "time": "2026-11-06T10:12:31Z", "note": "payments: charges with idempotency keys, reconciler"}
+{"service": "inventory", "git_sha": "2b96a1d", "time": "2026-11-07T14:30:08Z", "note": "inventory: stock commands over Kafka, stock API"}
+{"service": "orders", "git_sha": "a501343", "time": "2026-11-09T09:45:52Z", "note": "orders: saga over Kafka and payments"}
+{"service": "gateway", "git_sha": "03886d4", "time": "2026-11-10T16:20:17Z", "note": "gateway: API key, validation, proxy to orders"}
+{"service": "orders", "git_sha": "08623be", "time": "2026-11-12T11:05:44Z", "note": "orders: send card_token with charges"}
+{"service": "card-provider", "git_sha": "cf0aeaf", "time": "2026-11-14T15:40:03Z", "note": "card-provider: error_rate in the chaos switch"}
+{"service": "inventory", "git_sha": "98ac506", "time": "2026-11-17T10:30:26Z", "note": "inventory: send Kafka messages uncompressed"}
+{"service": "inventory", "git_sha": "8d74240", "time": "2026-11-20T10:03:12Z", "note": "inventory: normalise SKU case on lookup"}

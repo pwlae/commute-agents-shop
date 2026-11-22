@@ -65,6 +65,7 @@ func (h *Handler) Handle(ctx context.Context, topic string, value []byte, traceI
 	if cmd.OrderID == "" {
 		return fmt.Errorf("decode %s: missing order_id", topic)
 	}
+	cmd.Items = normalizeItems(cmd.Items)
 	switch topic {
 	case TopicReserve:
 		return h.reserve(ctx, cmd, traceID)
