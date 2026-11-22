@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shop-http"
+version = "0.1.0"
+description = "Shared HTTP client: timeouts, retries, circuit breaker, x-trace-id"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest==9.0.3"]
+
+[tool.setuptools]
+packages = ["shop_http"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
