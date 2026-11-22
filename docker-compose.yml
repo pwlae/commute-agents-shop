@@ -117,6 +117,42 @@ services:
   # card-provider:  Python (fake), :8100
   # inventory:      Go, :8200
 
+  orders-migrate:
+    image: migrate/migrate:v4.20.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./orders/migrations:/migrations:ro
+    command:
+      - -path=/migrations
+      - -database=postgres://orders:orders@postgres:5432/orders?sslmode=disable
+      - up
+    restart: "no"
+    mem_limit: 64m
+
+  orders:
+    build:
+      context: .
+      dockerfile: orders/Dockerfile
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      orders-migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "3001"
+      DATABASE_URL: postgres://orders:orders@postgres:5432/orders
+      KAFKA_BROKERS: kafka:9092
+      PAYMENTS_URL: http://payments:8000
+    healthcheck:
+      <<: *health
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3001/healthz"]
+    restart: unless-stopped
+    mem_limit: 128m
+
   # ---------------------------------------------------------
   # Traffic generator (compose profile "traffic", added later)
   # ---------------------------------------------------------
