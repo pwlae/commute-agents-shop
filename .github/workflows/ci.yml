@@ -1,0 +1,168 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.27.4"
+  NODE_VERSION: "22.22.0"
+  PYTHON_VERSION: "3.13.18"
+
+jobs:
+  libs:
+    name: libs (go, ts, py)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: http-go
+        working-directory: libs/http-go
+        run: go test ./...
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: libs/http-ts/package-lock.json
+      - name: http-ts
+        working-directory: libs/http-ts
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: |
+            3.10.21
+            3.13.18
+      - name: http-py
+        working-directory: libs/http-py
+        run: |
+          for py in python3.10 python3.13; do
+            echo "::group::$py"
+            "$py" -m venv "/tmp/venv-$py"
+            "/tmp/venv-$py/bin/pip" install -q -e '.[test]'
+            "/tmp/venv-$py/bin/pytest" -q
+            echo "::endgroup::"
+          done
+
+  services:
+    name: services (go, py, ts)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.12-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: payments
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      INVENTORY_TEST_DB: pgx5://postgres:postgres@127.0.0.1:5432/inventory?sslmode=disable
+      PAYMENTS_TEST_DSN: postgresql://postgres:postgres@127.0.0.1:5432/payments
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create the inventory database
+        run: >-
+          docker exec ${{ job.services.postgres.id }}
+          createdb -U postgres inventory
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: inventory/go.sum
+      - name: inventory (go test)
+        working-directory: inventory
+        run: |
+          go vet ./...
+          go test ./...
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: payments (pytest)
+        working-directory: payments
+        run: |
+          python -m venv /tmp/venv-payments
+          /tmp/venv-payments/bin/pip install -q \
+            -r requirements-test.txt ../libs/http-py
+          /tmp/venv-payments/bin/pytest -q
+      - name: card-provider (pytest)
+        working-directory: card-provider
+        run: |
+          python -m venv /tmp/venv-card
+          /tmp/venv-card/bin/pip install -q -r requirements.txt \
+            pytest==9.2.0 httpx2==2.14.0
+          /tmp/venv-card/bin/pytest -q
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            libs/http-ts/package-lock.json
+            orders/package-lock.json
+            gateway/package-lock.json
+      - name: Build libs/http-ts (orders and gateway use its dist/)
+        working-directory: libs/http-ts
+        run: |
+          npm ci
+          npm run build
+      - name: orders (tsc, vitest)
+        working-directory: orders
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
+      - name: gateway (tsc, vitest)
+        working-directory: gateway
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm test
+
+  triage:
+    name: triage (python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10.21", "3.13.18"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: unittest (standard library only)
+        run: python -m unittest discover -v graphs/triage/tests
+      - name: eval --replay (offline, from recordings)
+        run: |
+          rec=graphs/triage/recordings
+          if [ -z "$(find "$rec" -type f 2>/dev/null | head -n 1)" ]; then
+            echo "No recordings in $rec yet; skipping eval --replay."
+            exit 0
+          fi
+          python -m graphs.triage eval --replay
