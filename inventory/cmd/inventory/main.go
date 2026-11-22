@@ -57,7 +57,9 @@ func main() {
 	defer db.Close()
 	st := store.NewPostgres(db)
 
-	prod, err := kgo.NewClient(kgo.SeedBrokers(brokers...))
+	// No compression: kafkajs in orders cannot read snappy.
+	prod, err := kgo.NewClient(kgo.SeedBrokers(brokers...),
+		kgo.ProducerBatchCompression(kgo.NoCompression()))
 	if err != nil {
 		logger.Fatalf("ERROR cannot create kafka client: %v", err)
 	}

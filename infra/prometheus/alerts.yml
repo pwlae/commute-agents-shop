@@ -1,0 +1,80 @@
+# Alert rules for the shop. Prometheus evaluates them every
+# 15 s; there is no Alertmanager, so firing alerts show at
+# http://localhost:9090/alerts and on /api/v1/alerts.
+groups:
+  - name: shop
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $labels.job }} is not answering scrapes"
+
+      - alert: GatewayHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{service="gateway",code=~"5.."}[1m]))
+            / sum(rate(http_requests_total{service="gateway",route!~"/metrics|/healthz"}[1m]))
+            > 0.05
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Gateway 5xx ratio is {{ $value | humanizePercentage }}"
+
+      - alert: SagaStuck
+        expr: orders_pending_oldest_seconds > 120
+        labels:
+          severity: page
+        annotations:
+          summary: "Oldest PENDING order is {{ $value | humanizeDuration }} old"
+
+      - alert: DuplicateCharge
+        expr: increase(payments_duplicate_charges_total[10m]) > 0
+        labels:
+          severity: page
+        annotations:
+          summary: "An order was approved for payment more than once"
+
+      - alert: CapturedForFailedOrder
+        expr: payments_captured_for_failed_orders > 0
+        labels:
+          severity: page
+        annotations:
+          summary: "{{ $value }} approved charges belong to orders that did not complete"
+
+      - alert: StockDrift
+        expr: abs(inventory_stock_drift) > 0
+        for: 30s
+        labels:
+          severity: ticket
+        annotations:
+          summary: "Stock is off by {{ $value }} units"
+
+      - alert: InventoryConsumerLag
+        expr: inventory_consumer_lag > 5
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Inventory consumer is {{ $value }} messages behind"
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (service, le) (
+              rate(http_request_duration_seconds_bucket{route!~"/metrics|/healthz"}[2m])))
+            > 1
+        for: 1m
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $labels.service }} p95 latency is {{ $value | humanizeDuration }}"
+
+      - alert: CardProviderErrors
+        expr: sum(increase(card_provider_errors_total[2m])) > 3
+        labels:
+          severity: ticket
+        annotations:
+          summary: "{{ $value }} failed calls to the card provider in 2 minutes"
