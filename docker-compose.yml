@@ -1,6 +1,6 @@
 name: shop
 
-# Practice shop. Ports on the host: 8080 (gateway, later),
+# Practice shop. Ports on the host: 8080 (gateway),
 # 3000 (Grafana), 9090 (Prometheus). Everything else is
 # reachable only inside the compose network.
 
@@ -109,7 +109,7 @@ services:
     mem_limit: 384m
 
   # ---------------------------------------------------------
-  # Services (added by later steps)
+  # Services
   # ---------------------------------------------------------
   gateway:
     build:
@@ -132,6 +132,7 @@ services:
   # payments:       Python, :8000
   # card-provider:  Python (fake), :8100
   # inventory:      Go, :8200
+  # gateway:        TypeScript, :8080 (on the host too)
 
   inventory:
     build:
@@ -220,8 +221,22 @@ services:
     mem_limit: 128m
 
   # ---------------------------------------------------------
-  # Traffic generator (compose profile "traffic", added later)
+  # Traffic generator: docker compose --profile traffic up -d
   # ---------------------------------------------------------
+  traffic:
+    build:
+      context: .
+      dockerfile: traffic/Dockerfile
+    profiles: ["traffic"]
+    environment:
+      GATEWAY_URL: http://gateway:8080
+      API_KEY: dev-key
+      ORDERS_PER_S: "0.5"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 48m
 
 volumes:
   pgdata:
