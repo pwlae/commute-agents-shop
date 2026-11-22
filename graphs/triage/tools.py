@@ -20,7 +20,12 @@ ROOT = Path(__file__).resolve().parents[2]
 DEPLOYS = ROOT / "ops" / "deploys.jsonl"
 PROMETHEUS = "http://localhost:9090"
 
-LOG_KEEP = re.compile(r"error|ERROR|panic|Traceback|WARN")
+# Errors and warnings in any case (orders logs level=warn),
+# plus the INFO lines that carry facts: inventory's reserve
+# and release counts and REJECTED transitions.
+LOG_KEEP = re.compile(
+    r"error|panic|traceback|warn|rejected"
+    r"|\breserved \d+ items|\brelease order", re.I)
 # "orders-1  | " added by `docker compose logs`
 COMPOSE_PREFIX = re.compile(r"^[\w.-]+\s+\|\s?")
 
@@ -67,7 +72,7 @@ def deploys(services: list[str], since: str, until: str,
 
 def logs(service: str, since: str, until: str,
          limit: int = 200) -> list[str]:
-    """Error and warning lines of one service in a window.
+    """Error, warning and fact lines (LOG_KEEP) of a service.
 
     Keeps the newest `limit` lines, without the Compose
     "service-1 | " prefix.
