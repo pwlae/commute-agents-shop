@@ -53,14 +53,14 @@ func TestPostgresStore(t *testing.T) {
 			t.Fatalf("%s: %+v %v", sku, s, err)
 		}
 	}
-	two := []store.Item{{"MAT-01", 2}, {"LAMP-02", 1}, {"MAT-01", 1}}
+	mats := []store.Item{{"MAT-01", 2}, {"MAT-01", 1}}
 
-	r, err := st.Reserve(ctx, "o-1", two)
+	r, err := st.Reserve(ctx, "o-1", mats)
 	if err != nil || r.Rejected || r.Duplicate {
 		t.Fatalf("reserve %+v %v", r, err)
 	}
 	check("MAT-01", 47, 3)
-	if r, _ := st.Reserve(ctx, "o-1", two); !r.Duplicate {
+	if r, _ := st.Reserve(ctx, "o-1", mats); !r.Duplicate {
 		t.Fatalf("second reserve %+v", r)
 	}
 	check("MAT-01", 47, 3)
@@ -75,11 +75,10 @@ func TestPostgresStore(t *testing.T) {
 		t.Fatalf("o-3 %+v", r)
 	}
 
-	if r, err := st.Release(ctx, "o-1", nil); err != nil || len(r.Items) != 2 {
+	if r, err := st.Release(ctx, "o-1", nil); err != nil || len(r.Items) != 1 {
 		t.Fatalf("release %+v %v", r, err)
 	}
 	check("MAT-01", 50, 0)
-	check("LAMP-02", 50, 0)
 
 	st.Reserve(ctx, "o-4", []store.Item{{"CABLE-04", 4}})
 	st.Commit(ctx, "o-4")

@@ -138,6 +138,8 @@ services:
     build:
       context: .
       dockerfile: inventory/Dockerfile
+      args:
+        BAD_SKU_CASE: ${BAD_SKU_CASE:-0}
     environment:
       PORT: "8200"
       DATABASE_URL: postgres://inventory:inventory@postgres:5432/inventory?sslmode=disable

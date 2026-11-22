@@ -103,19 +103,9 @@ func WatchLag(ctx context.Context, cl *kgo.Client, every time.Duration, logger *
 	t := time.NewTicker(every)
 	defer t.Stop()
 	for {
-		lags, err := adm.Lag(ctx, Group)
-		if err == nil {
-			err = lags.Error()
-		}
-		if err != nil {
+		if total, err := lag(ctx, adm); err != nil {
 			logger.Printf("WARN cannot read consumer lag: %v", err)
 		} else {
-			var total int64
-			for _, l := range lags[Group].Lag.Sorted() {
-				if l.Lag > 0 {
-					total += l.Lag
-				}
-			}
 			lagGauge.Set(float64(total))
 		}
 		select {
@@ -124,4 +114,44 @@ func WatchLag(ctx context.Context, cl *kgo.Client, every time.Duration, logger *
 		case <-t.C:
 		}
 	}
+}
+
+// lag compares the group's committed offsets with the end of each
+// partition. It does not depend on the group having members, so a
+// consumer that keeps restarting still shows its backlog.
+func lag(ctx context.Context, adm *kadm.Client) (int64, error) {
+	commits, err := adm.FetchOffsets(ctx, Group)
+	if err != nil {
+		return 0, err
+	}
+	if err := commits.Error(); err != nil {
+		return 0, err
+	}
+	starts, err := adm.ListStartOffsets(ctx, Topics...)
+	if err != nil {
+		return 0, err
+	}
+	ends, err := adm.ListEndOffsets(ctx, Topics...)
+	if err != nil {
+		return 0, err
+	}
+	var total int64
+	var perr error
+	ends.Each(func(end kadm.ListedOffset) {
+		if end.Err != nil {
+			perr = end.Err
+			return
+		}
+		var from int64
+		if s, ok := starts.Lookup(end.Topic, end.Partition); ok && s.Err == nil {
+			from = s.Offset
+		}
+		if c, ok := commits.Lookup(end.Topic, end.Partition); ok && c.At >= 0 {
+			from = c.At
+		}
+		if end.Offset > from {
+			total += end.Offset - from
+		}
+	})
+	return total, perr
 }

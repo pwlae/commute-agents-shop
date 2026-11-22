@@ -4,7 +4,10 @@ WORKDIR /src/inventory
 COPY inventory/go.mod inventory/go.sum ./
 RUN go mod download
 COPY inventory/ ./
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" \
+ARG BAD_SKU_CASE=0
+RUN case=""; [ "$BAD_SKU_CASE" = 1 ] && case=lower; \
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w \
+    -X github.com/pwlae/commute-agents-shop/inventory/internal/consumer.skuCase=$case" \
     -o /out/inventory ./cmd/inventory
 
 FROM alpine:3.24.4
